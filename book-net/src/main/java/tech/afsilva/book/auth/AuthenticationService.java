@@ -3,6 +3,7 @@ package tech.afsilva.book.auth;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import tech.afsilva.book.email.EmailService;
 import tech.afsilva.book.role.RoleRepository;
 import tech.afsilva.book.user.Token;
 import tech.afsilva.book.user.TokenRepository;
@@ -20,6 +21,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final TokenRepository tokenRepository;
+    private final EmailService emailService;
 
     public void register(RegistrationRequest request) {
         var userRole = roleRepository.findByName("USER")
