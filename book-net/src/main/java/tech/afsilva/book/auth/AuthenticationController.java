@@ -1,6 +1,7 @@
 package tech.afsilva.book.auth;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,28 @@ public class AuthenticationController {
     public ResponseEntity<?> register(
             @RequestBody @Valid RegistrationRequest request
     ) {
-        service.register(request);
-        return ResponseEntity.accepted().build();
+        try{
+            service.register(request);
+            return ResponseEntity.accepted().build();
+        } catch (MessagingException e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+
+    }
+
+    @PostMapping("/authenticate")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<AuthenticationResponse> authenticate(
+            @RequestBody @Valid AuthenticationRequest request
+    ){
+        return ResponseEntity.ok(service.authenticate(request));
+    }
+
+    @GetMapping("/activate-account")
+    public void confirm(
+            @RequestParam String token
+    ) throws MessagingException {
+        service.activateAccount(token);
     }
 }

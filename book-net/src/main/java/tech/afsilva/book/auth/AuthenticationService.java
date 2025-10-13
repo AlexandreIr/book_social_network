@@ -1,10 +1,19 @@
 package tech.afsilva.book.auth;
 
+import jakarta.mail.MessagingException;
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import tech.afsilva.book.email.EmailService;
+import tech.afsilva.book.email.EmailTemplate;
 import tech.afsilva.book.role.RoleRepository;
+import tech.afsilva.book.security.JwtService;
 import tech.afsilva.book.user.Token;
 import tech.afsilva.book.user.TokenRepository;
 import tech.afsilva.book.user.User;
@@ -12,6 +21,7 @@ import tech.afsilva.book.user.UserRepository;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -22,8 +32,13 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final TokenRepository tokenRepository;
     private final EmailService emailService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
-    public void register(RegistrationRequest request) {
+    @Value("${application.mailing.frontend.activation-url}")
+    private String activationUrl;
+
+    public void register(RegistrationRequest request) throws MessagingException {
         var userRole = roleRepository.findByName("USER")
                 //TODO better exception handler
                 .orElseThrow(()-> new IllegalStateException("User role not initialized"));
@@ -40,8 +55,16 @@ public class AuthenticationService {
         sendValidationEmail(user);
     }
 
-    private void sendValidationEmail(User user) {
+    private void sendValidationEmail(User user) throws MessagingException {
         var newToken = generateAndSaveActivationToken(user);
+        emailService.sendEmail(
+                user.getEmail(),
+                user.getFullName(),
+                EmailTemplate.ACTIVATE_ACCOUNT,
+                activationUrl,
+                newToken,
+                "Account Activation"
+        );
     }
 
     private String generateAndSaveActivationToken(User user) {
@@ -65,5 +88,37 @@ public class AuthenticationService {
             sb.append(characters.charAt(randomIndex));
         }
         return sb.toString();
+    }
+
+    public AuthenticationResponse authenticate(@Valid AuthenticationRequest request) {
+        var auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
+        );
+        var claims = new HashMap<String, Object>();
+        var user =((User) auth.getPrincipal());
+        claims.put("fullname", user.getFullName());
+        var jwtToken = jwtService.generateToken(claims,user);
+        return AuthenticationResponse.builder()
+                .token(jwtToken)
+                .build();
+    }
+
+    @Transactional
+    public void activateAccount(String token) throws MessagingException {
+        Token savedToken = tokenRepository.findByToken(token)
+                .orElseThrow(()-> new RuntimeException("Invalid token"));
+        if(LocalDateTime.now().isAfter(savedToken.getExpiresAt())){
+            sendValidationEmail(savedToken.getUser());
+            throw new RuntimeException("Activation token expired. A new token has been sent to the same email address");
+        }
+        var user = userRepository.findById(savedToken.getUser().getId())
+                .orElseThrow(()-> new UsernameNotFoundException("User not found"));
+        user.setEnabled(true);
+        userRepository.save(user);
+        savedToken.setValidatedAt(LocalDateTime.now());
+        tokenRepository.save(savedToken);
     }
 }
