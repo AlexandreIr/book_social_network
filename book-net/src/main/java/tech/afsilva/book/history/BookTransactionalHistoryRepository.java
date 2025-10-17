@@ -22,12 +22,12 @@ public interface BookTransactionalHistoryRepository extends JpaRepository<BookTr
     Page<BookTransactionalHistory> findAllReturnedBooks(Pageable pageable, Integer userId);
 
     @Query("""
-        SELECT 
+        SELECT
         (COUNT(*) > 6 ) AS isBorrowed
         FROM BookTransactionalHistory bookTransactionalHistory
         WHERE bookTransactionalHistory.user.id = :userId
         AND bookTransactionalHistory.book.id = :bookId
-        AND bookTransactionalHistory.returnApproved = false 
+        AND bookTransactionalHistory.returnApproved = false
         """)
     boolean alreadyBorrowedByUser(Integer bookId, Integer userId);
 }
