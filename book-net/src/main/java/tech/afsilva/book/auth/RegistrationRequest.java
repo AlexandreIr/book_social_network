@@ -21,7 +21,7 @@ public class RegistrationRequest {
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
     @NotEmpty(message = "First name is required")
-    @NotBlank(message = "First is required")
+    @NotBlank(message = "First name is required")
     @Size(min = 3, max = 255, message = "First name must be between 3 and 255 characters long")
     private String firstname;
     @NotEmpty(message = "Last name is required")
