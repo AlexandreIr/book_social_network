@@ -10,7 +10,7 @@ import tech.afsilva.book.role.Role;
 import tech.afsilva.book.role.RoleRepository;
 
 @SpringBootApplication
-@EnableJpaAuditing
+@EnableJpaAuditing(auditorAwareRef = "auditorAware")
 @EnableAsync
 public class BookNetApiApplication {
 
