@@ -37,6 +37,8 @@ public class AuthenticationService {
     @Value("${application.mailing.frontend.activation-url}")
     private String activationUrl;
 
+    private final Integer TOKENLENGTH = 6;
+
     public void register(RegistrationRequest request) throws MessagingException {
         var userRole = roleRepository.findByName("USER")
                 //TODO better exception handler
@@ -67,7 +69,7 @@ public class AuthenticationService {
     }
 
     private String generateAndSaveActivationToken(User user) {
-        String generatedToken = generateActivationCode(6);
+        String generatedToken = generateActivationCode(TOKENLENGTH);
         var token = Token.builder()
                 .token(generatedToken)
                 .createdAt(LocalDateTime.now())
@@ -105,7 +107,6 @@ public class AuthenticationService {
                 .build();
     }
 
-    //@Transactional
     public void activateAccount(String token) throws MessagingException {
         Token savedToken = tokenRepository.findByToken(token)
                 .orElseThrow(()-> new RuntimeException("Invalid token"));
