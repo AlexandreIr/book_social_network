@@ -2,6 +2,7 @@ package tech.afsilva.book.book;
 
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
+import tech.afsilva.book.file.FileUtils;
 import tech.afsilva.book.history.BookTransactionalHistory;
 
 @Service
@@ -29,6 +30,7 @@ public class BookMapper {
                 .shareable(book.isShareable())
                 .rate(book.getRate())
                 .owner(book.getOwner().getFullName())
+                .cover(FileUtils.readFileFromLocation(book.getBookCover()))
                 .build();
     }
 

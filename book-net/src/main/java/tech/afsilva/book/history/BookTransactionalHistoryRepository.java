@@ -30,4 +30,11 @@ public interface BookTransactionalHistoryRepository extends JpaRepository<BookTr
         AND bookTransactionalHistory.returnApproved = false
         """)
     boolean alreadyBorrowedByUser(Integer bookId, Integer userId);
+
+    @Query("""
+    SELECT b
+    FROM BookTransactionalHistory b
+    WHERE b.book.id = :bookId
+    """)
+    BookTransactionalHistory findByBookId(Integer bookId);
 }

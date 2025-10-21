@@ -9,8 +9,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import tech.afsilva.book.common.PageResponse;
 import tech.afsilva.book.exception.OperationNotAllowedException;
+import tech.afsilva.book.file.FileStorageService;
 import tech.afsilva.book.history.BookTransactionalHistory;
 import tech.afsilva.book.history.BookTransactionalHistoryRepository;
 import tech.afsilva.book.user.User;
@@ -25,6 +27,7 @@ public class BookService {
     private final BookRepository bookRepository;
     private final BookTransactionalHistoryRepository bookTransactionalHistoryRepository;
     private final BookMapper bookMapper;
+    private final FileStorageService fileStorageService;
 
     public Integer saveBook(@Valid BookRequest request, Authentication currentUser) {
         User user = ((User) currentUser.getPrincipal());
@@ -163,5 +166,41 @@ public class BookService {
                 .build();
         return bookTransactionalHistoryRepository.save(bookTransactionalHistory).getId();
 
+    }
+
+    public Integer returnBook(Integer bookId, Authentication currentUser) {
+        BookTransactionalHistory bth = bookTransactionalHistoryRepository.findByBookId(bookId);
+        User user = (User) currentUser.getPrincipal();
+
+        if(!bth.getUser().getId().equals(user.getId())){
+            throw new OperationNotAllowedException("You didn't lent this book, so you can't return it");
+        }
+
+        bth.setReturned(true);
+        return  bookTransactionalHistoryRepository.save(bth).getId();
+    }
+
+    public Integer approveReturnBook(Integer bookId, Authentication currentUser) {
+        BookTransactionalHistory bth = bookTransactionalHistoryRepository.findByBookId(bookId);
+        User user = (User) currentUser.getPrincipal();
+
+        if(!Objects.equals(bth.getBook().getOwner().getId(), user.getId())){
+            throw new OperationNotAllowedException("You didn't borrow this book, so you can't approve the return");
+        }
+        if(!bth.isReturned()){
+            throw new OperationNotAllowedException("You Can't approve a return that's not yet happened");
+        }
+
+        bth.setReturnApproved(true);
+        return bookTransactionalHistoryRepository.save(bth).getId();
+    }
+
+    public void uploadBookCover(MultipartFile file, Authentication currentUser, Integer bookId) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(()->new EntityNotFoundException("Book not found with id: "+bookId));
+        User user = ((User) currentUser.getPrincipal());
+        var bookCover = fileStorageService.saveFile(file, user.getId());
+        book.setBookCover(bookCover);
+        bookRepository.save(book);
     }
 }
