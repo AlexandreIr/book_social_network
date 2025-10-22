@@ -118,4 +118,13 @@ public class BookController {
         service.uploadBookCover(file, currentUser, bookId);
         return ResponseEntity.accepted().build();
     }
+
+    @GetMapping(value = "/user/books")
+    public ResponseEntity<PageResponse<BookResponse>> findAllMyBooks(
+            @RequestParam(name = "page", defaultValue = "0", required = false) int page,
+            @RequestParam(name = "size", defaultValue = "10", required = false) int size,
+            Authentication currentUser
+    ){
+        return ResponseEntity.ok(service.findAllMyBooks(page, size, currentUser));
+    }
 }

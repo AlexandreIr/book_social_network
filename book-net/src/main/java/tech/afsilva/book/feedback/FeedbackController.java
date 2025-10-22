@@ -35,4 +35,13 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.showBookFeedbacks(bookId, page, size, currentUser));
     }
 
+    @GetMapping(value = "/user")
+    public ResponseEntity<PageResponse<OwnFeedbackResponse>> showUserFeedbacks(
+            @RequestParam(name = "page", defaultValue = "0", required = false) int page,
+            @RequestParam(name = "size", defaultValue = "10", required = false) int size,
+            Authentication currentUser
+    ){
+        return ResponseEntity.ok(feedbackService.showUserFeedbacks(page, size, currentUser));
+    }
+
 }

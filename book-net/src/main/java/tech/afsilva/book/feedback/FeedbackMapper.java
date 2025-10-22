@@ -20,4 +20,12 @@ public class FeedbackMapper {
                 .ownFeedback(Objects.equals(feedback.getCreatedBy(), userId))
                 .build();
     }
+
+    public OwnFeedbackResponse toOwnFeedbackResponse(Feedback feedback) {
+        return OwnFeedbackResponse.builder()
+                .bookId(feedback.getBook().getId())
+                .comment(feedback.getComment())
+                .score(feedback.getScore())
+                .build();
+    }
 }

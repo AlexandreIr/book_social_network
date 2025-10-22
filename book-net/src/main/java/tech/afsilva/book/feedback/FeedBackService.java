@@ -66,4 +66,27 @@ public class FeedBackService {
                 feedbacks.isLast()
         );
     }
+
+
+    public PageResponse<OwnFeedbackResponse> showUserFeedbacks(
+            Integer page,
+            Integer size,
+            Authentication currentUser) {
+        User user = ((User) currentUser.getPrincipal());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdDate").descending());
+        Page<Feedback> feedbacks = feedbackRepository.findAllFeedbacksBySelf(user.getId(), pageable);
+        List<OwnFeedbackResponse> feedbackResponse = feedbacks.stream()
+                .map(feedbackMapper::toOwnFeedbackResponse)
+                .toList();
+
+        return new PageResponse<>(
+                feedbackResponse,
+                feedbacks.getNumber(),
+                feedbacks.getSize(),
+                feedbacks.getTotalPages(),
+                feedbacks.getTotalElements(),
+                feedbacks.isFirst(),
+                feedbacks.isLast()
+        );
+    }
 }

@@ -203,4 +203,23 @@ public class BookService {
         book.setBookCover(bookCover);
         bookRepository.save(book);
     }
+
+
+    public PageResponse<BookResponse> findAllMyBooks(int page, int size, Authentication currentUser) {
+        User user = ((User) currentUser.getPrincipal());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdDate").descending());
+        Page<Book> allMyBooks = bookRepository.findAllMyBooks(pageable, user.getId());
+        List<BookResponse> bookResponse = allMyBooks.stream()
+                .map(bookMapper::toBookResponse)
+                .toList();
+        return new PageResponse<>(
+                bookResponse,
+                allMyBooks.getNumber(),
+                allMyBooks.getSize(),
+                allMyBooks.getTotalPages(),
+                allMyBooks.getTotalElements(),
+                allMyBooks.isLast(),
+                allMyBooks.isFirst()
+        );
+    }
 }

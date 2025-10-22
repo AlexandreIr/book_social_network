@@ -17,4 +17,11 @@ public interface BookRepository extends JpaRepository<Book, Integer>, JpaSpecifi
            """)
     Page<Book> findAllDisplayableBooks(Pageable pageable, Integer userId);
 
+    @Query("""
+        SELECT b
+        FROM Book b
+        WHERE b.owner.id = :userId
+        """)
+    Page<Book> findAllMyBooks(Pageable pageable, Integer userId);
+
 }
